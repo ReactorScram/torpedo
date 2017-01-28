@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset=UTF-8>
@@ -5,7 +6,19 @@
 <script src="torpedo.js" type="text/javascript"></script>
 </head>
 <body onload="load_torpedo ('vid1', 'vid2')">
+<div>
 <video id="vid1" src="test-video.webm" controls="controls"></video>
+<div>
+<button onclick="play1 ()">Ready Player One</button>
+<button onclick="pause1 ()">Not Ready</button>
+</div>
+</div>
+<div>
 <video id="vid2" src="test-video.webm" controls="controls" muted="true"></video>
+<div>
+<button onclick="play2 ()">Ready Player Two</button>
+<button onclick="pause2 ()">Not Ready</button>
+</div>
+</div>
 </body>
 </html>

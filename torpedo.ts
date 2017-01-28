@@ -1,13 +1,24 @@
 declare var vid1: HTMLVideoElement;
 declare var vid2: HTMLVideoElement;
 
+declare var player1_ready: boolean;
+declare var player2_ready: boolean;
+
 function vid_paused (vid) {
+	pause_all ();
+}
+
+function vid_played (vid) {
+	play_all ();
+}
+
+function pause_all () {
 	console.log ("Paused");
 	vid1.pause ();
 	vid2.pause ();
 }
 
-function vid_played (vid) {
+function play_all () {
 	console.log ("Played");
 	vid1.play ();
 	vid2.play ();
@@ -40,7 +51,43 @@ function acquire_video (vid_id: string): HTMLVideoElement {
 	return vid;
 }
 
+function play1 () {
+	player1_ready = true;
+	update_play_pause ();
+}
+
+function play2 () {
+	player2_ready = true;
+	update_play_pause ();
+}
+
+function pause1 () {
+	player1_ready = false;
+	update_play_pause ();
+}
+
+function pause2 () {
+	player2_ready = false;
+	update_play_pause ();
+}
+
+function all_players_ready () {
+	return player1_ready && player2_ready;
+}
+
+function update_play_pause () {
+	if (all_players_ready ()) {
+		play_all ();
+	}
+	else {
+		pause_all ();
+	}
+}
+
 function load_torpedo (vid_id1: string, vid_id2: string) {
 	vid1 = acquire_video (vid_id1);
 	vid2 = acquire_video (vid_id2);
+	
+	player1_ready = false;
+	player2_ready = false;
 }
