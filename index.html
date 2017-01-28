@@ -1,60 +1,47 @@
 <!DOCTYPE html>
-<!--
 <html>
 <head>
 <meta charset=UTF-8>
-<title>Torpedo video sinker</title>
-<script src="torpedo.js" type="text/javascript"></script>
-</head>
-<body onload="torpedo_load ('vid1')">
-<div>
-	<video id="vid1" src="test-video.webm" muted="true"></video>
-	<div>
-		<button onclick="trpd.ready ()">Ready Player One</button>
-		<button onclick="trpd.unready ()">Not Ready</button>
-	</div>
-</div>
-</body>
-</html>
--->
-<html>
-<head>
-<meta charset=UTF-8>
-	<title>Smash Bros Melee Opening</title>
+<title>Smash Bros Melee Opening</title>
 </head>
 <body>
 	<div>
 		<video id="trpd_vid" src="test-video.webm" muted="true"></video>
 		<div>
-			<button onclick="ready ()">&gt;</button>
-			<button onclick="unready ()">||</button>
+			<!-- Play -->
+			<button onclick="ready (true)">&#9654;</button>
+			<!-- Pause -->
+			<button onclick="ready (false)">&#9646;&#9646;</button>
 		</div>
 	</div>
-	<p style="color:#aaaaaa">Torpedo Video Sinker</p>
+	<p style="color:#a0b7e0">Torpedo Video Sinker</p>
 <script src="http://localhost:8080/jquery-1.11.3.min.js"></script>
 <script>
 	// TODO: Extract script
+	
 	// for browsers that don't have console
 	if(typeof window.console == 'undefined') { window.console = {log: function (msg) {} }; }
-
+	
 	// Start checking for any events that occurred after page load time (right now)
 	// Notice how we use .getTime() to have num milliseconds since epoch in UTC
 	// This is the time format the longpoll server uses.
 	var sinceTime = (new Date(Date.now())).getTime();
-
+	
 	// Let's subscribe to animal related events.
 	var category = "torpedo";
 	
 	let server = "http://localhost:8081/torpedo";
 	
-	function ready () {
-		var url = server + "/ready";
-		$.ajax ({ url: url });
-	}
+	let vid = document.getElementById ("trpd_vid");
 	
-	function unready () {
-		var url = server + "/unready";
-		$.ajax ({ url: url });
+	function ready (r) {
+		let url = server + "/ready";
+		let msg = {
+			ready: r,
+			time: vid.currentTime,
+		};
+		let msg_json = JSON.stringify (msg);
+ 		$.ajax ({ method: "POST", url: url, data: msg_json });
 	}
 	
 	(function poll() {
@@ -80,10 +67,14 @@
 						var vid_id = "trpd_vid";
 						var vid = document.getElementById (vid_id);
 						
-						if (event.data === "play") {
+						var msg = JSON.parse (atob (event.data));
+						
+						if (msg.ready) {
+							vid.currentTime = msg.time;
 							vid.play ();
 						}
-						else if (event.data === "pause") {
+						else {
+							vid.currentTime = msg.time;
 							vid.pause ();
 						}
 						

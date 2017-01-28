@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/jcuga/golongpoll"
-	//"io/ioutil"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 func addDefaultHeaders(fn http.HandlerFunc) http.HandlerFunc {
@@ -24,13 +23,9 @@ func main () {
 		log.Fatalf ("Failed to create manager: %q", err)
 	}
 	
-	//go generateTimes (manager)
-	
 	http.HandleFunc ("/torpedo/events", addDefaultHeaders (manager.SubscriptionHandler))
 	
-	http.HandleFunc ("/torpedo/ready", addDefaultHeaders (playerIsReady (manager, true)))
-	
-	http.HandleFunc ("/torpedo/unready", addDefaultHeaders (playerIsReady (manager, false)))
+	http.HandleFunc ("/torpedo/ready", addDefaultHeaders (playerIsReady (manager)))
 	
 	host := "127.0.0.1:8081"
 	fmt.Println ("Listening... ", host);
@@ -39,20 +34,12 @@ func main () {
 	manager.Shutdown ()
 }
 
-func playerIsReady (lpManager * golongpoll.LongpollManager, ready bool) http.HandlerFunc {
+func playerIsReady (lpManager * golongpoll.LongpollManager) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-		if ready {
-			lpManager.Publish ("torpedo", "play")
-		} else {
-			lpManager.Publish ("torpedo", "pause")
-		}
-        fmt.Fprintf (w, ":)")
+		body, _ := ioutil.ReadAll (r.Body)
+		
+		lpManager.Publish ("torpedo", body)
+		
+        fmt.Fprintf (w, "<3")
     }
-}
-
-func generateTimes (lpManager *golongpoll.LongpollManager) {
-	for {
-		time.Sleep (time.Duration (10000) * time.Millisecond)
-		lpManager.Publish ("torpedo", "Longer than you think!")
-	}
 }
