@@ -1,93 +1,96 @@
-declare var vid1: HTMLVideoElement;
-declare var vid2: HTMLVideoElement;
+var trpd: Torpedo;
 
-declare var player1_ready: boolean;
-declare var player2_ready: boolean;
-
-function vid_paused (vid) {
-	pause_all ();
+enum EMessageType {
+	Ready,
+	Unready,
+	Seek,
 }
 
-function vid_played (vid) {
-	play_all ();
-}
-
-function pause_all () {
-	console.log ("Paused");
-	vid1.pause ();
-	vid2.pause ();
-}
-
-function play_all () {
-	console.log ("Played");
-	vid1.play ();
-	vid2.play ();
-}
-
-function abs_diff (time1: number, time2: number): number {
-	return Math.abs (time1 - time2);
-}
-
-function vid_seeked (vid) {
-	console.log ("Seeked");
-	
-	// Try to get within a quarter second, anyway
-	var epsilon: number = 0.25;
-	
-	if (abs_diff (vid1.currentTime, vid.currentTime) > epsilon) {
-		vid1.currentTime = vid.currentTime;
-	}
-	
-	if (abs_diff (vid2.currentTime, vid.currentTime) > epsilon) {
-		vid2.currentTime = vid.currentTime;
+class Message {
+	constructor (public type: EMessageType, public active_time: number, public seek_pos: number) 
+	{
+		
 	}
 }
 
-function acquire_video (vid_id: string): HTMLVideoElement {
-	var vid: HTMLVideoElement = <HTMLVideoElement> document.getElementById (vid_id);
-	vid.addEventListener ("seeked", function () { vid_seeked (vid); }, true);
-	vid.addEventListener ("play", function () { vid_played (vid); }, true);
-	vid.addEventListener ("pause", function () { vid_paused (vid); }, true);
-	return vid;
-}
-
-function play1 () {
-	player1_ready = true;
-	update_play_pause ();
-}
-
-function play2 () {
-	player2_ready = true;
-	update_play_pause ();
-}
-
-function pause1 () {
-	player1_ready = false;
-	update_play_pause ();
-}
-
-function pause2 () {
-	player2_ready = false;
-	update_play_pause ();
-}
-
-function all_players_ready () {
-	return player1_ready && player2_ready;
-}
-
-function update_play_pause () {
-	if (all_players_ready ()) {
-		play_all ();
-	}
-	else {
-		pause_all ();
-	}
-}
-
-function load_torpedo (vid_id1: string, vid_id2: string) {
-	vid1 = acquire_video (vid_id1);
-	vid2 = acquire_video (vid_id2);
+class Torpedo {
+	vid: HTMLVideoElement;
+	local_ready: boolean;
 	
-	player1_ready = false;
-	player2_ready = false;
+	// Mock server bits
+	server_ready: boolean;
+	send_lag: number;
+	recv_lag: number;
+	
+	constructor (vid_id: string) {
+		this.vid = <HTMLVideoElement> document.getElementById (vid_id);
+		let that = this;
+		this.vid.addEventListener ("seeked", function () { that.vid_seeked (); }, true);
+		this.vid.addEventListener ("play", function () { that.vid_played (); }, true);
+		this.vid.addEventListener ("pause", function () { that.vid_paused (); }, true);
+		
+		this.send_lag = 300;
+		this.recv_lag = 200;
+	}
+	
+	// Circuit breaker
+	log (msg: string): void {
+		if (true) {
+			console.log (msg);
+		}
+	}
+	
+	vid_paused (): void {
+		this.log ("Paused");
+	}
+	
+	vid_played (): void {
+		this.log ("Played");
+	}
+	
+	// Sought?
+	vid_seeked (): void {
+		this.log ("Seeked");
+		this.vid.pause ();
+	}
+	
+	ready (): void {
+		this.local_ready = true;
+		this.send_to_server (new Message (EMessageType.Ready, 0.0));
+	}
+	
+	unready (): void {
+		this.local_ready = false;
+		this.send_to_server (new Message (EMessageType.Unready, 0.0));
+	}
+	
+	// This obviously shouldn't touch the DOM
+	server_process_msg (msg: Message): void {
+		this.server_ready = msg.type === EMessageType.Ready;
+		this.send_to_local (new Message (msg.type, 0.0));
+	}
+	
+	// This obviously shouldn't touch the server things
+	local_process_msg (msg: Message): void {
+		if (msg.type === EMessageType.Ready) {
+			this.vid.play ();
+		}
+		else {
+			this.vid.pause ();
+		}
+	}
+	
+	send_to_server (msg: Message): void {
+		let that = this;
+		setTimeout(function() { that.server_process_msg (msg) }, this.send_lag);
+	}
+	
+	send_to_local (msg: Message): void {
+		let that = this;
+		setTimeout(function() { that.local_process_msg (msg) }, this.recv_lag);
+	}
+}
+
+function torpedo_load (vid_id: string) {
+	trpd = new Torpedo (vid_id);
 }
