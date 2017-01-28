@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--
 <html>
 <head>
 <meta charset=UTF-8>
@@ -13,5 +14,109 @@
 		<button onclick="trpd.unready ()">Not Ready</button>
 	</div>
 </div>
+</body>
+</html>
+-->
+<html>
+<head>
+<meta charset=UTF-8>
+	<title>Smash Bros Melee Opening</title>
+</head>
+<body>
+	<div>
+		<video id="trpd_vid" src="test-video.webm" muted="true"></video>
+		<div>
+			<button onclick="ready ()">&gt;</button>
+			<button onclick="unready ()">||</button>
+		</div>
+	</div>
+	<p style="color:#aaaaaa">Torpedo Video Sinker</p>
+<script src="http://localhost:8080/jquery-1.11.3.min.js"></script>
+<script>
+	// TODO: Extract script
+	// for browsers that don't have console
+	if(typeof window.console == 'undefined') { window.console = {log: function (msg) {} }; }
+
+	// Start checking for any events that occurred after page load time (right now)
+	// Notice how we use .getTime() to have num milliseconds since epoch in UTC
+	// This is the time format the longpoll server uses.
+	var sinceTime = (new Date(Date.now())).getTime();
+
+	// Let's subscribe to animal related events.
+	var category = "torpedo";
+	
+	let server = "http://localhost:8081/torpedo";
+	
+	function ready () {
+		var url = server + "/ready";
+		$.ajax ({ url: url });
+	}
+	
+	function unready () {
+		var url = server + "/unready";
+		$.ajax ({ url: url });
+	}
+	
+	(function poll() {
+		var timeout = 45;  // in seconds
+		var optionalSince = "";
+		if (sinceTime) {
+			optionalSince = "&since_time=" + sinceTime;
+		}
+		var pollUrl = server + "/events?timeout=" + timeout + "&category=" + category + optionalSince;
+		// how long to wait before starting next longpoll request in each case:
+		var successDelay = 10;  // 10 ms
+		var errorDelay = 3000;  // 3 sec
+		$.ajax({ url: pollUrl,
+			success: function(data) {
+				if (data && data.events && data.events.length > 0) {
+					// got events, process them
+					// NOTE: these events are in chronological order (oldest first)
+					for (var i = 0; i < data.events.length; i++) {
+						// Display event
+						var event = data.events[i];
+						//$("#video-events").append("<li>" + event.data + " at " + (new Date(event.timestamp).toLocaleTimeString()) +  "</li>")
+						
+						var vid_id = "trpd_vid";
+						var vid = document.getElementById (vid_id);
+						
+						if (event.data === "play") {
+							vid.play ();
+						}
+						else if (event.data === "pause") {
+							vid.pause ();
+						}
+						
+						// Update sinceTime to only request events that occurred after this one.
+						sinceTime = event.timestamp;
+					}
+					// success!  start next longpoll
+					setTimeout(poll, successDelay);
+					return;
+				}
+				if (data && data.timeout) {
+					console.log("No events, checking again.");
+					// no events within timeout window, start another longpoll:
+					setTimeout(poll, successDelay);
+					return;
+				}
+				if (data && data.error) {
+					console.log("Error response: " + data.error);
+					console.log("Trying again shortly...")
+					setTimeout(poll, errorDelay);
+					return;
+				}
+				// We should have gotten one of the above 3 cases:
+				// either nonempty event data, a timeout, or an error.
+				console.log("Didn't get expected event data, try again shortly...");
+				setTimeout(poll, errorDelay);
+			}, dataType: "json",
+		error: function (data) {
+			console.log("Error in ajax request--trying again shortly...");
+			setTimeout(poll, errorDelay);  // 3s
+		}
+		});
+	})();
+</script>
 </body>
 </html>
