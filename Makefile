@@ -1,2 +1,2 @@
-torpedo.js: torpedo.ts
-	tsc --outfile $@ $<
+torpedo-server: torpedo-server.go
+	go build $< && strip $@
