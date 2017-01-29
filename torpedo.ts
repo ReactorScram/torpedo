@@ -3,6 +3,14 @@ interface IJquery {
 }
 declare var $: IJquery;
 
+interface IReadyMessage {
+	client_id: number;
+	clients_seen: number;
+	ready: boolean;
+	time: number;
+	wall_time: number;
+}
+
 // Start checking for any events that occurred after page load time (right now)
 // Notice how we use .getTime() to have num milliseconds since epoch in UTC
 // This is the time format the longpoll server uses.
@@ -27,11 +35,11 @@ if (!!stored_id) {
 
 let other_readies = {};
 
-function write_debug (msg) {
+function write_debug (msg: string): void {
 	debug_text.innerHTML = msg;
 }
 
-function ready (r) {
+function ready (r: boolean): void {
 	let url = server + "/ready";
 	let msg = {
 		ready: r,
@@ -48,7 +56,7 @@ function ready (r) {
 	}
 }
 
-function get_id () {
+function get_id (): void {
 	if (client_id === -1) {
 		var array = new Uint32Array(1);
 		window.crypto.getRandomValues(array);
@@ -62,7 +70,7 @@ function get_id () {
 	ready (false);
 }
 
-function pluralize (noun, count) {
+function pluralize (noun: string, count: number): string {
 	if (count === 1) {
 		return noun;
 	}
@@ -71,7 +79,7 @@ function pluralize (noun, count) {
 	}
 }
 
-function receive_other_ready (msg) {
+function receive_other_ready (msg: IReadyMessage): void {
 	other_readies [msg.client_id] = msg;
 	let pausers = get_pausers ();
 	
@@ -101,7 +109,7 @@ function receive_other_ready (msg) {
 	play_if_ready (pausers);
 }
 
-function for_each_ready (fn) {
+function for_each_ready (fn: (obj: IReadyMessage) => void): void {
 	for (var key in other_readies) {
 		var obj = other_readies[key];
 		
@@ -110,7 +118,7 @@ function for_each_ready (fn) {
 }
 
 // I have a feeling this function is redundant and it won't sync right
-function get_slowest_time () {
+function get_slowest_time (): number {
 	let t = 0.0;
 	
 	for_each_ready (function (msg) {
@@ -127,11 +135,11 @@ function get_slowest_time () {
 	return t;
 }
 
-function get_starting_wall_time (msg) {
+function get_starting_wall_time (msg: IReadyMessage): number {
 	return msg.wall_time - msg.time * 1000;
 }
 
-function get_lag_estimate () {
+function get_lag_estimate (): number {
 	let min = 0.0;
 	let max = 0.0;
 	
@@ -151,7 +159,7 @@ function get_lag_estimate () {
 	return max - min;
 }
 
-function get_pausers () {
+function get_pausers (): number {
 	let pausers = 0;
 	
 	for_each_ready (function (msg) {
@@ -166,7 +174,7 @@ function get_pausers () {
 	return pausers;
 }
 
-function play_if_ready (pausers) {
+function play_if_ready (pausers: any): void {
 	if (pausers == 0) {
 		vid.play ();
 	}
@@ -180,8 +188,8 @@ function play_if_ready (pausers) {
 }
 
 (
-function main () {
-function poll() {
+function main (): void {
+function poll(): void {
 	var timeout = 45;  // in seconds
 	var optionalSince = "";
 	if (sinceTime) {
