@@ -16,7 +16,12 @@ let debug_text = document.getElementById ("debug-text");
 
 vid.addEventListener ("waiting", function () {ready (false);}, true);
 
+let stored_id = sessionStorage.getItem ("torpedo_id");
+
 let client_id = -1;
+if (!!stored_id) {
+	client_id = stored_id;
+}
 
 let other_readies = {};
 
@@ -42,12 +47,17 @@ function ready (r) {
 }
 
 function get_id () {
-	let url = server + "/get_id";
-	$.ajax ({ method: "GET", url: url, success: function (data) {
-		client_id = parseInt (data);
-		console.log ("Got ID: " + client_id);
-		ready (false);
-	}});
+	if (client_id === -1) {
+		var array = new Uint32Array(1);
+		window.crypto.getRandomValues(array);
+		
+		client_id = array [0];
+		// TODO: dedup key string
+		sessionStorage.setItem ("torpedo_id", client_id);
+	}
+	
+	console.log ("Got ID: " + client_id);
+	ready (false);
 }
 
 function pluralize (noun, count) {
