@@ -1,24 +1,26 @@
-// for browsers that don't have console
-if(typeof window.console == 'undefined') { window.console = {log: function (msg) {} }; }
+interface IJquery {
+	ajax (options: any): void;
+}
+declare var $: IJquery;
 
 // Start checking for any events that occurred after page load time (right now)
 // Notice how we use .getTime() to have num milliseconds since epoch in UTC
 // This is the time format the longpoll server uses.
-var sinceTime = (new Date(Date.now())).getTime();
+let sinceTime = (new Date(Date.now())).getTime();
 
 // Let's subscribe to video related events.
-var category = "torpedo";
+let category = "torpedo";
 
 let server = "api";
 
-let vid = document.getElementById ("trpd_vid");
+let vid: HTMLVideoElement = <HTMLVideoElement> document.getElementById  ("trpd_vid");
 let debug_text = document.getElementById ("debug-text");
 
 vid.addEventListener ("waiting", function () {ready (false);}, true);
 
-let stored_id = sessionStorage.getItem ("torpedo_id");
+let stored_id: number = parseInt (sessionStorage.getItem ("torpedo_id"));
 
-let client_id = -1;
+let client_id: number = -1;
 if (!!stored_id) {
 	client_id = stored_id;
 }
@@ -53,7 +55,7 @@ function get_id () {
 		
 		client_id = array [0];
 		// TODO: dedup key string
-		sessionStorage.setItem ("torpedo_id", client_id);
+		sessionStorage.setItem ("torpedo_id", String (client_id));
 	}
 	
 	console.log ("Got ID: " + client_id);
