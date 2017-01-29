@@ -23,7 +23,15 @@ func main () {
 		log.Fatalf ("Failed to create manager: %q", err)
 	}
 	
+	counter_chan := make(chan int, 3)
+	go GoCounterRoutine(counter_chan)
+	
 	http.HandleFunc ("/api/events", addDefaultHeaders (manager.SubscriptionHandler))
+	
+	http.HandleFunc ("/api/get_id", addDefaultHeaders (func (w http.ResponseWriter, r * http.Request) {
+		id := <- counter_chan
+		fmt.Fprintf (w, "%d", id)
+	}))
 	
 	http.HandleFunc ("/api/ready", addDefaultHeaders (playerIsReady (manager)))
 	
@@ -37,6 +45,15 @@ func main () {
 	http.ListenAndServe (host, nil)
 	
 	manager.Shutdown ()
+}
+
+// started somewhere else
+func GoCounterRoutine(ch chan int) {
+    counter := 0
+    for {
+        ch <- counter
+        counter += 1
+    }
 }
 
 func playerIsReady (lpManager * golongpoll.LongpollManager) http.HandlerFunc {
