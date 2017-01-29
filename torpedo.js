@@ -113,7 +113,7 @@ function get_slowest_time () {
 	
 	for_each_ready (function (msg) {
 		if (! msg.ready) {
-			if (t == 0.0) {
+			if (t === 0.0) {
 				t = msg.time;
 			}
 			else if (msg.time < t) {
@@ -123,6 +123,30 @@ function get_slowest_time () {
 	});
 	
 	return t;
+}
+
+function get_starting_wall_time (msg) {
+	return msg.wall_time - msg.time * 1000;
+}
+
+function get_lag_estimate () {
+	let min = 0.0;
+	let max = 0.0;
+	
+	for_each_ready (function (msg) {
+		let starting_wall_time = get_starting_wall_time (msg);
+		
+		if (min === 0.0) {
+			min = starting_wall_time;
+			max = starting_wall_time;
+		}
+		else {
+			min = Math.min (min, starting_wall_time);
+			max = Math.max (max, starting_wall_time);
+		}
+	});
+	
+	return max - min;
 }
 
 function get_pausers () {
