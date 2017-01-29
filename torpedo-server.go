@@ -23,9 +23,14 @@ func main () {
 		log.Fatalf ("Failed to create manager: %q", err)
 	}
 	
-	http.HandleFunc ("/torpedo/stuff/events", addDefaultHeaders (manager.SubscriptionHandler))
+	http.HandleFunc ("/api/events", addDefaultHeaders (manager.SubscriptionHandler))
 	
-	http.HandleFunc ("/torpedo/stuff/ready", addDefaultHeaders (playerIsReady (manager)))
+	http.HandleFunc ("/api/ready", addDefaultHeaders (playerIsReady (manager)))
+	
+	http.HandleFunc ("/", func (w http.ResponseWriter, r * http.Request) {
+		//fmt.Println (r.URL.Path)
+		http.ServeFile (w, r, "./" + r.URL.Path)
+	})
 	
 	host := "127.0.0.1:8081"
 	fmt.Println ("Listening... ", host);
